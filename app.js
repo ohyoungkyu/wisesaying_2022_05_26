@@ -54,12 +54,67 @@ app.get("/wise_sayings/random", async (req, res) => {
     [wiseSayingRow.id]
   );
 
-  wiseSayingRow.hitCount++;
+  wiseSayingRow.hit_Count++;
 
   res.json({
     resultCode: "S-1",
     msg: "성공",
     data: wiseSayingRow,
+  });
+});
+
+//
+app.patch("/wise_sayings/:id", async (req, res) => {
+  const { id } = req.params;
+  const [[wiseSayingRow]] = await pool.query(
+    `
+    SELECT *
+    FROM wise_saying
+    WHERE id = ?
+    `,
+    [id]
+  );
+
+  if (wiseSayingRow === undefined) {
+    res.status(404).json({
+      resultCode: "F-1",
+      msg: "404 not found",
+    });
+    return;
+  }
+
+  const {
+    content = wiseSayingRow.content,
+    author = wiseSayingRow.author,
+    goodLikeCount = wiseSayingRow.goodLikeCount,
+    badLikeCount = wiseSayingRow.badLikeCount,
+  } = req.body;
+
+  await pool.query(
+    `
+    UPDATE wise_saying
+    SET content = ?,
+    author = ?,
+    goodLikeCount = ?,
+    badLikeCount = ?
+    WHERE id = ?
+    `,
+    [content, author, goodLikeCount, badLikeCount, id]
+  );
+
+  const [[justModifiedWiseSayingRow]] = await pool.query(
+    `
+    SELECT *
+    FROM wise_saying
+    WHERE id = ?
+    `,
+    [id]
+  );
+
+  res.json({
+    resultCode: "S-1",
+    msg: "성공",
+    data: justModifiedWiseSayingRow,
   });
 });
 
